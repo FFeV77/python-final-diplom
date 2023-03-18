@@ -120,3 +120,4 @@ venv.bak/
 
 
 poetry.lock
+.vscode/settings.json
