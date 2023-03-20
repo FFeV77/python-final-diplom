@@ -1,7 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-# import jwt
-
+from django.db import models
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -35,6 +33,7 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('Email should be set')
         extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
 
         user = self.model(email=self.normalize_email(email),
                           **extra_fields)
@@ -47,6 +46,7 @@ class User(AbstractUser):
     email = models.EmailField('email', unique=True, db_index=True)
     type = models.CharField('тип пользователя', choices=USER_TYPE_CHOICES, default='buyer', max_length=5)
 
+    objects = UserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
