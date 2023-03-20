@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'orders'
+    'backend'
 ]
 
 MIDDLEWARE = [
@@ -128,3 +128,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = env('STATIC_URL')
+
+AUTH_USER_MODEL = 'backend.User'
