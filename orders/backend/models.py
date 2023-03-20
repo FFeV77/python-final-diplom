@@ -45,6 +45,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     email = models.EmailField('email', unique=True, db_index=True)
+    type = models.CharField('тип пользователя', choices=USER_TYPE_CHOICES, default='buyer', max_length=5)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
