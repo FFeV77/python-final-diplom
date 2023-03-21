@@ -1,9 +1,11 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from django.db.models.signals import post_save
+
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -23,29 +25,23 @@ USER_TYPE_CHOICES = (
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password, **extra_fields):
+    def _create_user(self, email, password, **extra_fields):
         if not email:
-            raise ValueError('Email should be set')
-        extra_fields.setdefault('username', email)
-
-        user = self.model(email=self.normalize_email(email),
-                          **extra_fields)
+            raise ValueError('The given email must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, password=password, **extra_fields)
         user.set_password(password)
-        user.save()
+        user.save(using=self._db)
         return user
 
+    def create_user(self, email, password, **extra_fields):
+        return self._create_user(email, password, **extra_fields)
+
     def create_superuser(self, email, password, **extra_fields):
-        if not email:
-            raise ValueError('Email should be set')
-        extra_fields.setdefault('username', email)
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
-        user = self.model(email=self.normalize_email(email),
-                          **extra_fields)
-        user.set_password(password)
-        user.save()
-        return user
+        return self._create_user(email, password, **extra_fields)
 
     @receiver(post_save, sender=settings.AUTH_USER_MODEL)
     def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -56,6 +52,19 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     email = models.EmailField('email', unique=True, db_index=True)
     type = models.CharField('тип пользователя', choices=USER_TYPE_CHOICES, default='buyer', max_length=5)
+
+    father_name = models.CharField('отчество', max_length=150, blank=True)
+    company = models.CharField('Компания', max_length=150, blank=True)
+    position = models.CharField('должность', max_length=150, blank=True)
+    username = models.CharField(
+        'username',
+        max_length=150,
+        help_text=('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+        validators=[UnicodeUsernameValidator()],
+        error_messages={
+            'unique': ("A user with that username already exists."),
+        },
+    )
 
     objects = UserManager()
     USERNAME_FIELD = 'email'
