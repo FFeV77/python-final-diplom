@@ -57,7 +57,7 @@ class ProductInfoSerializer(ModelSerializer):
 
     class Meta:
         model = ProductInfo
-        fields = ['model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters']
+        fields = ['external_id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters']
 
 
 class ShopSerializer(ModelSerializer):
