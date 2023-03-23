@@ -1,5 +1,6 @@
+from backend.models import (Category, Parameter, Product, ProductInfo,
+                            ProductParameter, Shop, User)
 from rest_framework.serializers import ModelSerializer
-from backend.models import Category, Parameter, Product, ProductInfo, ProductParameter, Shop, User
 
 
 class CreateUserSerialyzer(ModelSerializer):
@@ -43,7 +44,7 @@ class ProductParameterSerialyzer(ModelSerializer):
 class CategorySerialyzer(ModelSerializer):
     class Meta:
         model = Category
-        fields = ['name']
+        fields = ['id', 'name']
 
 
 class ProductSerializer(ModelSerializer):
@@ -62,6 +63,7 @@ class ProductInfoSerializer(ModelSerializer):
 
 class ShopSerializer(ModelSerializer):
     product_infos = ProductInfoSerializer(many=True)
+    categories = CategorySerialyzer(many=True)
 
     class Meta:
         model = Shop
