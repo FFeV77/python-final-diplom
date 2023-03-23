@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from backend.models import User
+from backend.models import Category, Parameter, Product, ProductInfo, ProductParameter, Shop, User
 
 
 class CreateUserSerialyzer(ModelSerializer):
@@ -10,7 +10,7 @@ class CreateUserSerialyzer(ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
-    
+
 
 class UpdateUserSerializer(ModelSerializer):
     class Meta:
@@ -26,3 +26,43 @@ class UpdateUserSerializer(ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class ParameterSerializer(ModelSerializer):
+    class Meta:
+        model = Parameter
+        fields = []
+
+
+class ProductParameterSerialyzer(ModelSerializer):
+    class Meta:
+        model = ProductParameter
+        fields = []
+
+
+class CategorySerialyzer(ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['name']
+
+
+class ProductSerializer(ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['name', 'category']
+
+
+class ProductInfoSerializer(ModelSerializer):
+    product_parameters = ProductParameterSerialyzer(many=True)
+
+    class Meta:
+        model = ProductInfo
+        fields = ['model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters']
+
+
+class ShopSerializer(ModelSerializer):
+    product_infos = ProductInfoSerializer(many=True)
+
+    class Meta:
+        model = Shop
+        fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
