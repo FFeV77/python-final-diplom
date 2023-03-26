@@ -1,6 +1,6 @@
 from backend.models import (Category, Parameter, Product, ProductInfo,
                             ProductParameter, Shop, User)
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, CharField, IntegerField
 
 
 class CreateUserSerialyzer(ModelSerializer):
@@ -32,13 +32,19 @@ class UpdateUserSerializer(ModelSerializer):
 class ParameterSerializer(ModelSerializer):
     class Meta:
         model = Parameter
-        fields = []
+        fields = ['name']
 
 
 class ProductParameterSerialyzer(ModelSerializer):
     class Meta:
         model = ProductParameter
-        fields = []
+        fields = ['parameter', 'value']
+
+    def to_internal_value(self, data):
+        ret = []
+        for key, val in data.items():
+            ret.append({'parameter': key, 'value': val})
+        return ret
 
 
 class CategorySerialyzer(ModelSerializer):
@@ -68,3 +74,37 @@ class ShopSerializer(ModelSerializer):
     class Meta:
         model = Shop
         fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
+
+
+class ProductInfoLoadSerializer(ModelSerializer):
+    id = IntegerField(source='external_id')
+    parameters = ProductParameterSerialyzer(source='product_parameters')
+
+    class Meta:
+        model = ProductInfo
+        fields = ['id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'parameters']
+
+
+class ShopLoadSerializer(ModelSerializer):
+    shop = CharField(source='name')
+    goods = ProductInfoLoadSerializer(many=True, source='product_infos')
+    categories = CategorySerialyzer(many=True)
+
+    class Meta:
+        model = Shop
+        fields = ['shop', 'user', 'state', 'categories', 'goods']
+
+    def create(self, validated_data):
+        categories = validated_data.pop('categories')
+        for category in categories:
+            Category.objects.update_or_create(id=category['id'], defaults={'name': category['name']})
+        # product_infos = validated_data.pop('product_infos')
+        # shop = Shop.objects.create(**validated_data)
+        # shop.categories.set(categories)
+        # shop.user_id.set()
+        # for product in product_infos:
+        #     parameters = product.pop('product_parameters')
+        #     ProductInfo.objects.create(**product)
+        #     for parameter in parameters:
+        #         ProductParameter.objects.create(**parameter)
+        return shop

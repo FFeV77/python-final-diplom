@@ -90,6 +90,7 @@ class Shop(models.Model):
 
 
 class Category(models.Model):
+    id = models.PositiveIntegerField(unique=True, primary_key=True)
     name = models.CharField(max_length=40, verbose_name='Название')
     shops = models.ManyToManyField(Shop, verbose_name='Магазины', related_name='categories', blank=True)
 
@@ -131,7 +132,7 @@ class ProductInfo(models.Model):
         verbose_name = 'Информация о продукте'
         verbose_name_plural = "Информационный список о продуктах"
         constraints = [
-            models.UniqueConstraint(fields=['product', 'shop', 'model'], name='unique_product_info'),
+            models.UniqueConstraint(fields=['product', 'shop', 'model', 'external_id'], name='unique_product_info'),
         ]
 
 
