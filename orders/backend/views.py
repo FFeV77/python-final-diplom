@@ -1,4 +1,5 @@
 from backend.models import Shop, User
+from backend.permissions import IsShop
 from backend.serialyzers import (CreateUserSerialyzer, ShopLoadSerializer,
                                  ShopSerializer, UpdateUserSerializer)
 from backend.utils import file_shop_load, link_shop_load
@@ -33,7 +34,7 @@ class ShopView(RetrieveAPIView):
 
 class ShopLoadView(APIView):
     queryset = Shop.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated & IsShop]
     serializer_class = ShopLoadSerializer
 
     def post(self, request):

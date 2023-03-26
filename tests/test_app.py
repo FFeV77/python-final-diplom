@@ -36,7 +36,7 @@ def test_load(client, django_user_model):
 
     client.force_login(user)
     req = client.post('/api/load', data=data)
-    assert req.status_code == 401
+    assert req.status_code == 403
 
     client.force_login(user_shop)
     req = client.post('/api/load', data=data)
