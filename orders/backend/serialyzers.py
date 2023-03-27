@@ -53,12 +53,6 @@ class CategorySerialyzer(ModelSerializer):
         fields = ['id', 'name']
 
 
-class ProductSerializer(ModelSerializer):
-    class Meta:
-        model = Product
-        fields = ['name', 'category']
-
-
 class ProductInfoSerializer(ModelSerializer):
     product_parameters = ProductParameterSerialyzer(many=True)
     # product = SlugRelatedField('name')
@@ -66,6 +60,13 @@ class ProductInfoSerializer(ModelSerializer):
     class Meta:
         model = ProductInfo
         fields = ['external_id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters']
+
+
+class ProductSerializer(ModelSerializer):
+    product_infos = ProductInfoSerializer(many=True)
+    class Meta:
+        model = Product
+        fields = ['name', 'category', 'product_infos']
 
 
 class ShopSerializer(ModelSerializer):
