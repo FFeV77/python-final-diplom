@@ -1,9 +1,9 @@
-from backend.models import Shop, User
+from backend.models import Product, Shop, User
 from backend.permissions import IsShop
-from backend.serialyzers import (CreateUserSerialyzer, ShopLoadSerializer,
+from backend.serialyzers import (CreateUserSerialyzer, ProductSerializer, ShopLoadSerializer,
                                  ShopSerializer, UpdateUserSerializer)
 from backend.utils import file_shop_load, link_shop_load
-from rest_framework.generics import (CreateAPIView, RetrieveAPIView,
+from rest_framework.generics import (CreateAPIView, RetrieveAPIView, ListAPIView,
                                      RetrieveUpdateAPIView)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -24,6 +24,13 @@ class GetUserView(RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ListProduct(ListAPIView):
+    queryset = Product.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProductSerializer
+    ...
 
 
 class ShopView(RetrieveAPIView):
