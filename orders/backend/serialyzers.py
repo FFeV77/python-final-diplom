@@ -1,13 +1,21 @@
 from backend.models import (Category, Contact, Order, OrderItem, Parameter, Product, ProductInfo,
                             ProductParameter, Shop, User)
-from rest_framework.serializers import ModelSerializer, CharField, IntegerField, SlugRelatedField
+from rest_framework.serializers import ModelSerializer, CharField, IntegerField, ValidationError
 
 
 class CreateUserSerialyzer(ModelSerializer):
+    password = CharField(required=True, write_only=True, label='Пароль')
+    password2 = CharField(required=True, write_only=True, label='Проверка пароля')
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token']
+        fields = ['id', 'email', 'password', 'password2', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token']
         read_only_fields = ['auth_token', 'id']
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise ValidationError({'status': 'error', 'message': 'пароль не совпадает'})
+        attrs.pop('password2')
+        return super().validate(attrs)
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
