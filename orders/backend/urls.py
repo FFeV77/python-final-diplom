@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.authtoken import views
 
-from backend.views import CreateUserView, GetUserView, ListProduct, ProductView, ShopLoadView, ShopView
+from backend.views import BasketView, CreateUserView, GetUserView, ListProduct, ProductView, ShopLoadView, ShopView
 
 urlpatterns = [
     path('get-token/', views.obtain_auth_token),
@@ -11,4 +11,5 @@ urlpatterns = [
     path('load', ShopLoadView.as_view()),
     path('products', ListProduct.as_view()),
     path('products/<int:pk>', ProductView.as_view()),
+    path('basket', BasketView.as_view()),
 ]

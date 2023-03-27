@@ -1,6 +1,6 @@
-from backend.models import (Category, Parameter, Product, ProductInfo,
+from backend.models import (Category, Contact, Order, OrderItem, Parameter, Product, ProductInfo,
                             ProductParameter, Shop, User)
-from rest_framework.serializers import ModelSerializer, CharField, IntegerField
+from rest_framework.serializers import ModelSerializer, CharField, IntegerField, SlugRelatedField
 
 
 class CreateUserSerialyzer(ModelSerializer):
@@ -61,6 +61,7 @@ class ProductSerializer(ModelSerializer):
 
 class ProductInfoSerializer(ModelSerializer):
     product_parameters = ProductParameterSerialyzer(many=True)
+    # product = SlugRelatedField('name')
 
     class Meta:
         model = ProductInfo
@@ -74,6 +75,26 @@ class ShopSerializer(ModelSerializer):
     class Meta:
         model = Shop
         fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
+
+
+class ContactSerializer(ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = '__all__'
+
+
+class OrderItemSerializer(ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['product_info', 'quantity']
+
+
+class OrderSerializer(ModelSerializer):
+    contact = ContactSerializer()
+    ordered_items = OrderItemSerializer(many=True)
+    class Meta:
+        model = Order
+        fields = ['dt', 'state', 'contact', 'ordered_items']
 
 
 class ProductInfoLoadSerializer(ModelSerializer):
