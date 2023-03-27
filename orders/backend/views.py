@@ -1,6 +1,6 @@
-from backend.models import Product, Shop, User
+from backend.models import Product, ProductInfo, Shop, User
 from backend.permissions import IsShop
-from backend.serialyzers import (CreateUserSerialyzer, ProductSerializer, ShopLoadSerializer,
+from backend.serialyzers import (CreateUserSerialyzer, ProductInfoSerializer, ProductSerializer, ShopLoadSerializer,
                                  ShopSerializer, UpdateUserSerializer)
 from backend.utils import file_shop_load, link_shop_load
 from rest_framework.generics import (CreateAPIView, RetrieveAPIView, ListAPIView,
@@ -31,6 +31,12 @@ class ListProduct(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ProductSerializer
     ...
+
+
+class ProductView(RetrieveAPIView):
+    queryset = ProductInfo.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProductInfoSerializer
 
 
 class ShopView(RetrieveAPIView):
