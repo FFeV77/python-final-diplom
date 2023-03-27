@@ -24,17 +24,9 @@ class CreateUserSerialyzer(ModelSerializer):
 class UpdateUserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'token']
-        read_only_fields = ['id', 'token']
-
-    def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
-            instance.set_password(password)
-        instance.save()
-        return instance
+        # fields = ['id', 'email', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token']
+        exclude = ['password', 'is_superuser', 'is_staff', 'groups', 'user_permissions', 'last_login']
+        read_only_fields = ['auth_token']
 
 
 class ParameterSerializer(ModelSerializer):
