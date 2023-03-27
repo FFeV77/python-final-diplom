@@ -39,7 +39,7 @@ class ProductView(RetrieveAPIView):
     serializer_class = ProductInfoSerializer
 
 
-class BasketView(ListAPIView):
+class OrderListView(ListAPIView):
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
