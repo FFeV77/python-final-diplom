@@ -1,6 +1,6 @@
 from backend.models import (Category, Contact, Order, OrderItem, Parameter, Product, ProductInfo,
                             ProductParameter, Shop, User)
-from rest_framework.serializers import ModelSerializer, CharField, IntegerField, ValidationError
+from rest_framework.serializers import ModelSerializer, CharField, IntegerField, ValidationError, SerializerMethodField
 
 
 class CreateUserSerialyzer(ModelSerializer):
@@ -81,10 +81,11 @@ class ShopSerializer(ModelSerializer):
 class ContactSerializer(ModelSerializer):
     class Meta:
         model = Contact
-        fields = '__all__'
+        exclude = ['user']
 
 
 class OrderItemSerializer(ModelSerializer):
+    product_info = ProductInfoSerializer()
     class Meta:
         model = OrderItem
         fields = ['product_info', 'quantity']
@@ -93,9 +94,15 @@ class OrderItemSerializer(ModelSerializer):
 class OrderSerializer(ModelSerializer):
     contact = ContactSerializer()
     ordered_items = OrderItemSerializer(many=True)
+    # sum = IntegerField(source=Order.sum, read_only=True)
+    sum = SerializerMethodField
+
     class Meta:
         model = Order
-        fields = ['dt', 'state', 'contact', 'ordered_items']
+        fields = ['dt', 'state', 'sum', 'contact', 'ordered_items']
+
+    def get_sum(self, obj):
+        return obj.sum
 
 
 class ProductInfoLoadSerializer(ModelSerializer):

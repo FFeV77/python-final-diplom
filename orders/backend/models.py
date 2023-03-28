@@ -2,10 +2,9 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
-from django.db.models.signals import post_save
-
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -203,9 +202,9 @@ class Order(models.Model):
     def __str__(self):
         return str(self.dt)
 
-    # @property
-    # def sum(self):
-    #     return self.ordered_items.aggregate(total=Sum("quantity"))["total"]
+    @property
+    def sum(self):
+        return self.ordered_items.aggregate(total=models.Sum("quantity"))["total"]
 
 
 class OrderItem(models.Model):

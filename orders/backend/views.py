@@ -1,9 +1,9 @@
-from backend.models import Order, Product, ProductInfo, Shop, User
-from backend.permissions import IsShop
-from backend.serialyzers import (CreateUserSerialyzer, OrderSerializer, ProductInfoSerializer, ProductSerializer, ShopLoadSerializer,
+from backend.models import Contact, Order, Product, ProductInfo, Shop, User
+from backend.permissions import IsOrderUserOwner, IsShop
+from backend.serialyzers import (ContactSerializer, CreateUserSerialyzer, OrderSerializer, ProductInfoSerializer, ProductSerializer, ShopLoadSerializer,
                                  ShopSerializer, UpdateUserSerializer)
 from backend.utils import file_shop_load, link_shop_load
-from rest_framework.generics import (CreateAPIView, RetrieveAPIView, ListAPIView,
+from rest_framework.generics import (CreateAPIView, RetrieveAPIView, ListAPIView, ListCreateAPIView,
                                      RetrieveUpdateAPIView)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -43,6 +43,22 @@ class OrderListView(ListAPIView):
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        request = super().get_queryset()
+        return request.filter(user=self.request.user)
+    
+
+class OrderView(RetrieveAPIView):
+    queryset = Order.objects.all()
+    permission_classes = [IsOrderUserOwner]
+    serializer_class = OrderSerializer
+
+
+class ContactView(ListCreateAPIView):
+    queryset = Contact.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_class = ContactSerializer
 
     def get_queryset(self):
         request = super().get_queryset()
