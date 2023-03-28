@@ -1,9 +1,13 @@
 from backend.models import Contact, Order, Product, ProductInfo, Shop, User
 from backend.permissions import IsOrderUserOwner, IsShop
-from backend.serialyzers import (ContactSerializer, CreateUserSerialyzer, OrderSerializer, ProductInfoSerializer, ProductSerializer, ShopLoadSerializer,
-                                 ShopSerializer, UpdateUserSerializer)
+from backend.serialyzers import (ContactSerializer, CreateUserSerialyzer,
+                                 OrderListSerializer, OrderSerializer,
+                                 ProductInfoSerializer, ProductSerializer,
+                                 ShopLoadSerializer, ShopSerializer,
+                                 UpdateUserSerializer)
 from backend.utils import file_shop_load, link_shop_load
-from rest_framework.generics import (CreateAPIView, RetrieveAPIView, ListAPIView, ListCreateAPIView,
+from rest_framework.generics import (CreateAPIView, ListAPIView,
+                                     ListCreateAPIView, RetrieveAPIView,
                                      RetrieveUpdateAPIView)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -39,20 +43,20 @@ class ProductView(RetrieveAPIView):
     serializer_class = ProductInfoSerializer
 
 
-class OrderListView(ListAPIView):
-    queryset = Order.objects.all()
-    permission_classes = [IsAuthenticated]
-    serializer_class = OrderSerializer
-
-    def get_queryset(self):
-        request = super().get_queryset()
-        return request.filter(user=self.request.user)
-    
-
 class OrderView(RetrieveAPIView):
     queryset = Order.objects.all()
     permission_classes = [IsOrderUserOwner]
     serializer_class = OrderSerializer
+
+
+class OrderListView(ListAPIView):
+    queryset = Order.objects.all()
+    permission_classes = [IsOrderUserOwner]
+    serializer_class = OrderListSerializer
+
+    def get_queryset(self):
+        request = super().get_queryset()
+        return request.filter(user=self.request.user)
 
 
 class ContactView(ListCreateAPIView):
