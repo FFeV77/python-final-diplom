@@ -203,8 +203,8 @@ class Order(models.Model):
         return str(self.dt)
 
     @property
-    def sum(self):
-        return self.ordered_items.aggregate(total=models.Sum("quantity"))["total"]
+    def total(self):
+        return sum(item.sum for item in self.ordered_items.all())
 
 
 class OrderItem(models.Model):
@@ -222,3 +222,7 @@ class OrderItem(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['order_id', 'product_info'], name='unique_order_item'),
         ]
+
+    @property
+    def sum(self):
+        return self.product_info.price * self.quantity
