@@ -1,11 +1,13 @@
-from backend.models import (Category, Contact, Order, OrderItem, Parameter, Product, ProductInfo,
-                            ProductParameter, Shop, User)
-from rest_framework.serializers import ModelSerializer, CharField, IntegerField, ValidationError, SerializerMethodField
+from backend.models import (Category, Contact, Order, OrderItem, Parameter,
+                            Product, ProductInfo, ProductParameter, Shop, User)
+from rest_framework.serializers import (CharField, IntegerField,
+                                        ModelSerializer, ValidationError)
 
 
 class CreateUserSerialyzer(ModelSerializer):
     password = CharField(required=True, write_only=True, label='Пароль')
     password2 = CharField(required=True, write_only=True, label='Проверка пароля')
+
     class Meta:
         model = User
         fields = ['id', 'email', 'password', 'password2', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token']
@@ -97,8 +99,6 @@ class OrderItemSerializer(ModelSerializer):
 class OrderSerializer(ModelSerializer):
     contact = ContactSerializer()
     ordered_items = OrderItemSerializer(many=True)
-    # total = IntegerField(source=Order.total, read_only=True)
-    # sum = SerializerMethodField
 
     class Meta:
         model = Order
@@ -106,6 +106,12 @@ class OrderSerializer(ModelSerializer):
 
     def get_total(self, obj):
         return obj.total
+
+
+class OrderListSerializer(OrderSerializer):
+    class Meta:
+        model = Order
+        fields = ['id', 'dt', 'state', 'total']
 
 
 class ProductInfoLoadSerializer(ModelSerializer):
