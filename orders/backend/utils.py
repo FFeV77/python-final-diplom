@@ -3,7 +3,12 @@ import yaml
 from backend.models import (Category, Parameter, Product, ProductInfo,
                             ProductParameter, Shop)
 
-replacements = {'shop': 'name', 'goods': 'product_infos', 'parameters': 'product_parameters', 'id': 'external_id'}
+replacements = {
+    'shop': 'name',
+    'goods': 'product_infos',
+    'parameters': 'product_parameters',
+    'id': 'external_id'
+    }
 
 
 def yaml_shop_load(data, request):
