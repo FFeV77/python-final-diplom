@@ -4,7 +4,7 @@ from rest_framework.serializers import (CharField, IntegerField,
                                         ModelSerializer, ValidationError)
 
 
-class CreateUserSerialyzer(ModelSerializer):
+class UserSerialyzer(ModelSerializer):
     password = CharField(required=True, write_only=True, label='Пароль')
     password2 = CharField(required=True, write_only=True, label='Проверка пароля')
 
@@ -21,14 +21,6 @@ class CreateUserSerialyzer(ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
-
-
-class UpdateUserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        # fields = ['id', 'email', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token']
-        exclude = ['password', 'is_superuser', 'is_staff', 'groups', 'user_permissions', 'last_login']
-        read_only_fields = ['auth_token']
 
 
 class ParameterSerializer(ModelSerializer):
@@ -97,15 +89,17 @@ class OrderItemSerializer(ModelSerializer):
 
 
 class OrderSerializer(ModelSerializer):
-    contact = ContactSerializer()
     ordered_items = OrderItemSerializer(many=True)
 
     class Meta:
         model = Order
-        fields = ['dt', 'state', 'total', 'contact', 'ordered_items']
+        fields = ['dt', 'state', 'contact', 'total', 'ordered_items']
 
     def get_total(self, obj):
         return obj.total
+
+    def create(self, validated_data):
+        return super().create(validated_data)
 
 
 class OrderListSerializer(OrderSerializer):
@@ -145,4 +139,3 @@ class ShopLoadSerializer(ModelSerializer):
         #     ProductInfo.objects.create(**product)
         #     for parameter in parameters:
         #         ProductParameter.objects.create(**parameter)
-        return shop
