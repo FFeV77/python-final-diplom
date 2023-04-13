@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
 class IsShopOwner(BasePermission):
@@ -14,3 +14,12 @@ class IsOrderUserOwner(BasePermission):
 class IsShop(BasePermission):
     def has_permission(self, request, view):
         return request.user.type == 'shop'
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        else:
+            if obj.user == request.user:
+                return True
+            else:
+                return False
