@@ -1,7 +1,7 @@
 from backend.models import (Category, Contact, Order, OrderItem, Parameter,
                             Product, ProductInfo, ProductParameter, Shop, User)
-from rest_framework.serializers import (CharField, IntegerField,
-                                        ModelSerializer, ValidationError)
+from rest_framework.serializers import (CharField, IntegerField, ChoiceField, SerializerMethodField,
+                                        ModelSerializer, ValidationError, CurrentUserDefault)
 
 
 class UserSerialyzer(ModelSerializer):
@@ -91,6 +91,7 @@ class OrderItemSerializer(ModelSerializer):
 
 class OrderSerializer(ModelSerializer):
     ordered_items = OrderItemSerializer(many=True)
+    # contact = ChoiceField(Contact.objects.filter(user=user))
 
     class Meta:
         model = Order
@@ -98,9 +99,6 @@ class OrderSerializer(ModelSerializer):
 
     def get_total(self, obj):
         return obj.total
-
-    def create(self, validated_data):
-        return super().create(validated_data)
 
 
 class OrderListSerializer(OrderSerializer):
