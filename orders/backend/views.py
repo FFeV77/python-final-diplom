@@ -1,12 +1,11 @@
 from backend.models import Contact, Order, Product, ProductInfo, Shop, User
 from backend.permissions import IsOrderUserOwner, IsShop
-from backend.serialyzers import (ContactSerializer, UserSerialyzer,
-                                 OrderSerializer, ProductInfoSerializer,
-                                 ProductSerializer, ShopLoadSerializer,
-                                 ShopSerializer)
+from backend.serialyzers import (ContactSerializer, OrderSerializer,
+                                 ProductInfoSerializer, ProductSerializer,
+                                 ShopLoadSerializer, ShopSerializer,
+                                 UserSerialyzer)
 from backend.utils import file_shop_load, link_shop_load
 from rest_framework.authtoken.models import Token
-from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -67,7 +66,7 @@ class ListProductView(ReadOnlyModelViewSet):
 
 
 class ProductView(ReadOnlyModelViewSet):
-    queryset = ProductInfo.objects.all()
+    queryset = ProductInfo.objects.select_related('product')
     permission_classes = [IsAuthenticated]
     serializer_class = ProductInfoSerializer
 
@@ -84,7 +83,7 @@ class BuyerOrderView(ModelViewSet):
         return queryset
 
 
-class ContactView(ListCreateAPIView):
+class ContactView(ModelViewSet):
     queryset = Contact.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class = ContactSerializer
@@ -92,6 +91,10 @@ class ContactView(ListCreateAPIView):
     def get_queryset(self):
         request = super().get_queryset()
         return request.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.validated_data['user'] = self.request.user
+        return super().perform_create(serializer)
 
 
 class ShopView(ModelViewSet):
@@ -105,6 +108,10 @@ class ShopView(ModelViewSet):
         else:
             permission_classes = [IsShop]
         return [permission() for permission in permission_classes]
+    
+    def perform_create(self, serializer):
+        serializer.validated_data['user'] = self.request.user
+        return super().perform_create(serializer)
 
 
 class OrderShopView(ModelViewSet):

@@ -14,9 +14,10 @@ class UserSerialyzer(ModelSerializer):
         read_only_fields = ['auth_token', 'id']
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise ValidationError({'status': 'error', 'message': 'пароль не совпадает'})
-        attrs.pop('password2')
+        if attrs.get('password') and attrs.get('password2'):
+            if attrs['password'] != attrs['password2']:
+                raise ValidationError({'status': 'error', 'message': 'пароль не совпадает'})
+            attrs.pop('password2')
         return super().validate(attrs)
 
     def create(self, validated_data):
@@ -64,13 +65,13 @@ class ProductSerializer(ModelSerializer):
 
 
 class ShopSerializer(ModelSerializer):
-    product_infos = ProductInfoSerializer(many=True)
-    categories = CategorySerialyzer(many=True)
+    product_infos = ProductInfoSerializer(many=True, read_only=True)
+    categories = CategorySerialyzer(many=True, read_only=True)
 
     class Meta:
         model = Shop
         fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
-
+        read_only_fields = ['user']
 
 class ContactSerializer(ModelSerializer):
     class Meta:
