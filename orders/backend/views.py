@@ -66,32 +66,33 @@ class ListProductView(ReadOnlyModelViewSet):
 
 
 class ProductView(ReadOnlyModelViewSet):
-    queryset = ProductInfo.objects.select_related('product')
+    queryset = ProductInfo.objects.prefetch_related('product_parameters')
     permission_classes = [IsAuthenticated]
     serializer_class = ProductInfoSerializer
 
 
 class BuyerOrderView(ModelViewSet):
     queryset = Order.objects.all()
-    permission_classes = [IsOrderUserOwner]
+    permission_classes = [IsAuthenticated & IsOrderUserOwner]
     serializer_class = OrderSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action == 'list':
-            return queryset.filter(user=self.request.user)
-        return queryset
+        return queryset.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class ContactView(ModelViewSet):
     queryset = Contact.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated & IsOrderUserOwner]
     serializer_class = ContactSerializer
 
     def get_queryset(self):
         request = super().get_queryset()
         return request.filter(user=self.request.user)
-    
+
     def perform_create(self, serializer):
         serializer.validated_data['user'] = self.request.user
         return super().perform_create(serializer)
@@ -108,7 +109,7 @@ class ShopView(ModelViewSet):
         else:
             permission_classes = [IsShop]
         return [permission() for permission in permission_classes]
-    
+
     def perform_create(self, serializer):
         serializer.validated_data['user'] = self.request.user
         return super().perform_create(serializer)
