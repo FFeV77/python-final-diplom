@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 from django.core.mail import send_mail
 from django.urls import reverse
 
+
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
     ('new', 'Новый'),
@@ -41,6 +42,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
 
         return self._create_user(email, password, **extra_fields)
 
@@ -52,7 +54,7 @@ class UserManager(BaseUserManager):
     @receiver(post_save, sender=settings.AUTH_USER_MODEL)
     def register_mail(sender, instance=None, created=False, **kwargs):
         if created:
-            domain = 'http://127.0.0.1:8000'
+            domain = settings.EMAIL_SITE_HOST
             token = Token.objects.get(user=instance)
             url = reverse('activation', kwargs={'id': instance.pk, 'token': token.key})
             subject = 'Confirm registration'
