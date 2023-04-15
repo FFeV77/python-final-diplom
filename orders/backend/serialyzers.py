@@ -72,8 +72,9 @@ class CategorySerialyzer(ModelSerializer):
 
 
 class ShopSerializer(ModelSerializer):
-    product_infos = ProductInfoSerializer(many=True, read_only=True)
-    categories = CategorySerialyzer(many=True, read_only=True)
+    id = HyperlinkedRelatedField(read_only=True, view_name='shops-detail')
+    product_infos = HyperlinkedRelatedField(many=True, read_only=True, view_name='product-detail')
+    categories = HyperlinkedRelatedField(many=True, read_only=True, view_name='category-detail')
 
     class Meta:
         model = Shop
@@ -81,6 +82,7 @@ class ShopSerializer(ModelSerializer):
         read_only_fields = ['user']
 
 class ContactSerializer(ModelSerializer):
+    id = HyperlinkedRelatedField(read_only=True, view_name='contacts-detail')
     class Meta:
         model = Contact
         exclude = ['user']
