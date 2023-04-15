@@ -75,7 +75,7 @@ class ListProductView(ReadOnlyModelViewSet):
 
 
 class ProductView(ReadOnlyModelViewSet):
-    queryset = ProductInfo.objects.prefetch_related('product_parameters')
+    queryset = ProductInfo.objects.prefetch_related('product_parameters__parameter')
     permission_classes = [IsAuthenticated]
     serializer_class = ProductInfoSerializer
 
