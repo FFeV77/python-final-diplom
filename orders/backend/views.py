@@ -125,7 +125,7 @@ class ShopView(ModelViewSet):
 
 
 class OrderShopView(ModelViewSet):
-    queryset = Order.objects.filter(ordered_items__product_info__shop=9)
+    queryset = Order.objects.all()
     permission_classes = [IsShop]
     serializer_class = OrderSerializer
 
