@@ -8,11 +8,13 @@ from rest_framework.serializers import (CharField, HyperlinkedRelatedField, Hype
 class UserSerialyzer(ModelSerializer):
     password = CharField(required=True, write_only=True, label='Пароль')
     password2 = CharField(required=True, write_only=True, label='Проверка пароля')
+    contacts = HyperlinkedRelatedField(many=True, read_only=True, view_name='contacts-detail')
+    orders = HyperlinkedRelatedField(many=True, read_only=True, view_name='orders-detail')
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'password2', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token']
-        read_only_fields = ['auth_token', 'id']
+        fields = ['id', 'email', 'password', 'password2', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token', 'contacts', 'orders']
+        read_only_fields = ['auth_token']
 
     def validate(self, attrs):
         if attrs.get('password') and attrs.get('password2'):
@@ -96,20 +98,15 @@ class OrderItemSerializer(ModelSerializer):
 
 class OrderSerializer(ModelSerializer):
     ordered_items = OrderItemSerializer(many=True)
+    user = HyperlinkedRelatedField(read_only=True, view_name='user-detail')
     # contact = ChoiceField(Contact.objects.filter(user=user))
 
     class Meta:
         model = Order
-        fields = ['dt', 'state', 'contact', 'total', 'ordered_items']
+        fields = ['user', 'dt', 'state', 'contact', 'total', 'ordered_items']
 
     def get_total(self, obj):
         return obj.total
-
-
-class OrderListSerializer(OrderSerializer):
-    class Meta:
-        model = Order
-        fields = ['id', 'dt', 'state', 'total']
 
 
 class ProductInfoLoadSerializer(ModelSerializer):
