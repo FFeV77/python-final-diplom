@@ -1,7 +1,8 @@
 from backend.models import (Category, Contact, Order, OrderItem, Parameter,
                             Product, ProductInfo, ProductParameter, Shop, User)
-from rest_framework.serializers import (CharField, IntegerField, ChoiceField, SerializerMethodField,
-                                        ModelSerializer, ValidationError, CurrentUserDefault)
+from rest_framework.serializers import (CharField, HyperlinkedRelatedField,
+                                        IntegerField, ModelSerializer,
+                                        ValidationError)
 
 
 class UserSerialyzer(ModelSerializer):
@@ -58,7 +59,7 @@ class ProductInfoSerializer(ModelSerializer):
 
 
 class ProductSerializer(ModelSerializer):
-    product_infos = ProductInfoSerializer(many=True)
+    product_infos = HyperlinkedRelatedField(many=True, read_only=True, view_name='product-detail')
     class Meta:
         model = Product
         fields = ['name', 'category', 'product_infos']
