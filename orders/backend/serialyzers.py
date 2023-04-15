@@ -48,7 +48,7 @@ class ProductParameterSerialyzer(ModelSerializer):
 
 class ProductInfoSerializer(ModelSerializer):
     product_parameters = ProductParameterSerialyzer(many=True)
-    product = HyperlinkedIdentityField(read_only=True, view_name='products-detail')
+    product = HyperlinkedRelatedField(read_only=True, view_name='products-detail')
     shop = HyperlinkedRelatedField(read_only=True, view_name='shops-detail')
 
     class Meta:
