@@ -1,7 +1,7 @@
 from backend.models import (Category, Contact, Order, OrderItem, Parameter,
                             Product, ProductInfo, ProductParameter, Shop, User)
 from rest_framework.serializers import (CharField, HyperlinkedRelatedField, HyperlinkedIdentityField,
-                                        IntegerField, ModelSerializer,
+                                        IntegerField, ModelSerializer, SlugRelatedField,
                                         ValidationError)
 
 
@@ -32,6 +32,7 @@ class ParameterSerializer(ModelSerializer):
 
 
 class ProductParameterSerialyzer(ModelSerializer):
+    parameter = SlugRelatedField('name', read_only=True)
     class Meta:
         model = ProductParameter
         fields = ['parameter', 'value']
