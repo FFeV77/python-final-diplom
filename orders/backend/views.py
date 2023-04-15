@@ -57,10 +57,10 @@ class UserView(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
-    
+
 
 class CategoryView(ReadOnlyModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.prefetch_related('products')
     permission_classes = [IsAuthenticated]
     serializer_class = CategorySerialyzer
 
