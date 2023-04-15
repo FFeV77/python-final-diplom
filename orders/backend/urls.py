@@ -1,4 +1,4 @@
-from backend.views import (ContactView, UserView,
+from backend.views import (CategoryView, ContactView, UserView,
                            ListProductView, OrderShopView, ProductView,
                            ShopLoadView, ShopView, BuyerOrderView, ActivateUserView)
 from django.urls import path
@@ -13,6 +13,7 @@ router.register('product', ProductView, basename='product')
 router.register('shops', ShopView, basename='shops')
 router.register('orders_shop', OrderShopView, basename='orders_shop')
 router.register('contacts', ContactView, basename='contacts')
+router.register('category', CategoryView, basename='category')
 
 urlpatterns = [
     path('activation/<int:id>/<str:token>', ActivateUserView.as_view(), name='activation'),

@@ -1,6 +1,6 @@
-from backend.models import Contact, Order, Product, ProductInfo, Shop, User
+from backend.models import Category, Contact, Order, Product, ProductInfo, Shop, User
 from backend.permissions import IsOrderUserOwner, IsShop
-from backend.serialyzers import (ContactSerializer, OrderSerializer,
+from backend.serialyzers import (CategorySerialyzer, ContactSerializer, OrderSerializer,
                                  ProductInfoSerializer, ProductSerializer,
                                  ShopLoadSerializer, ShopSerializer,
                                  UserSerialyzer)
@@ -57,6 +57,12 @@ class UserView(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+    
+
+class CategoryView(ReadOnlyModelViewSet):
+    queryset = Category.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_class = CategorySerialyzer
 
 
 class ListProductView(ReadOnlyModelViewSet):
