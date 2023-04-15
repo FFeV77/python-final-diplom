@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 # Create your views here.
@@ -59,9 +60,11 @@ class UserView(ModelViewSet):
 
 
 class ListProductView(ReadOnlyModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related('product_infos')
     permission_classes = [IsAuthenticated]
     serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category']
     ...
 
 
