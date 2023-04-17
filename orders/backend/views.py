@@ -1,16 +1,15 @@
-from backend.models import Category, Contact, Order, Product, ProductInfo, Shop, User
+from backend import serialyzers
+from backend.models import (Category, Contact, Order, OrderItem, Product,
+                            ProductInfo, Shop, User)
 from backend.permissions import IsOrderUserOwner, IsShop
-from backend.serialyzers import (CategorySerialyzer, ContactSerializer, OrderSerializer,
-                                 ProductInfoSerializer, ProductSerializer,
-                                 ShopLoadSerializer, ShopSerializer,
-                                 UserSerialyzer)
 from backend.utils import file_shop_load, link_shop_load
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from django_filters.rest_framework import DjangoFilterBackend
 
 
 # Create your views here.
@@ -33,42 +32,31 @@ class ActivateUserView(APIView):
         return Response(resp)
 
 
-class UserView(ModelViewSet):
+class RegisterView(CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = [AllowAny]
+    serializer_class = serialyzers.UserSerialyzer
+
+
+class UserView(RetrieveUpdateAPIView):
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSerialyzer
+    serializer_class = serialyzers.UserSerialyzer
 
     def get_object(self):
         return self.request.user
-
-    # def get_serializer_class(self):
-    #     if self.action == 'create':
-    #         serializer = CreateUserSerialyzer
-    #     else:
-    #         serializer = super().get_serializer_class()
-    #     return serializer
-
-    def get_permissions(self):
-        if self.action == 'create':
-            permission = [AllowAny()]
-        else:
-            permission = super().get_permissions()
-        return permission
-
-    def list(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
 
 
 class CategoryView(ReadOnlyModelViewSet):
     queryset = Category.objects.prefetch_related('products')
     permission_classes = [IsAuthenticated]
-    serializer_class = CategorySerialyzer
+    serializer_class = serialyzers.CategorySerialyzer
 
 
 class ListProductView(ReadOnlyModelViewSet):
     queryset = Product.objects.prefetch_related('product_infos')
     permission_classes = [IsAuthenticated]
-    serializer_class = ProductSerializer
+    serializer_class = serialyzers.ProductSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['category']
     ...
@@ -77,30 +65,97 @@ class ListProductView(ReadOnlyModelViewSet):
 class ProductView(ReadOnlyModelViewSet):
     queryset = ProductInfo.objects.prefetch_related('product_parameters__parameter')
     permission_classes = [IsAuthenticated]
-    serializer_class = ProductInfoSerializer
+    serializer_class = serialyzers.ProductInfoSerializer
 
 
 class BuyerOrderView(ModelViewSet):
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated & IsOrderUserOwner]
-    serializer_class = OrderSerializer
+    serializer_class = serialyzers.OrderSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
         return queryset.filter(user=self.request.user)
 
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    def perform_create(self, serializer):
+        basket = self.queryset.filter(user=self.request.user, state='basket')
+        if basket:
+            raise ValidationError('Basket exists')
+        serializer.validated_data['user'] = self.request.user
+        return super().perform_create(serializer)
 
+
+class BasketView(ModelViewSet):
+    queryset = OrderItem.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_class = serialyzers.OrderItemSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        basket = Order.objects.get(user=self.request.user, state='basket')
+        return queryset.filter(order=basket)
+
+    def perform_create(self, serializer):
+        basket = Order.objects.get(user=self.request.user, state='basket')
+        serializer.validated_data['order_id'] = basket.pk
+        return super().perform_create(serializer)
+
+
+class OrderConfirmView(APIView):
+    queryset = Order.objects.all()
+    permission_classes = [IsAuthenticated & IsOrderUserOwner]
+
+    def change_quantity(self, items):
+        save_list = [item.save() for item in items]
+        OrderItem.objects.bulk_update(save_list, item.product_info.quantity)
+
+    def verify_items(self, basket):
+        errors = []
+        items = []
+        ordered_items = OrderItem.objects.filter(order=basket)
+        for item in ordered_items:
+            try:
+                check_quantity = item.quantity <= item.product_info.quantity
+                if check_quantity:
+                    item.product_info.quantity -= item.quantity
+                    items.append(item)
+                    # item.save()
+                    continue
+                else:
+                    errors.append(item.product_info.pk)
+            except OrderItem.DoesNotExist:
+                errors.append('NF')
+        return errors
+
+    def check_basket(self):
+        try:
+            basket = Order.objects.get(user=self.request.user, state='basket')
+            return basket
+        except Order.DoesNotExist:
+            return False
+
+    def put(self, request):
+        basket = self.check_basket()
+        if basket:
+            verify = self.verify_items(basket)
+            if verify:
+                basket.state = 'new'
+                basket.save()
+                resp = {'Message: Order created'}
+            else:
+                resp = verify
+        else:
+            resp = {'message': 'basket is empty'}
+        return Response(resp)
 
 class ContactView(ModelViewSet):
     queryset = Contact.objects.all()
     permission_classes = [IsAuthenticated & IsOrderUserOwner]
-    serializer_class = ContactSerializer
+    serializer_class = serialyzers.ContactSerializer
 
     def get_queryset(self):
-        request = super().get_queryset()
-        return request.filter(user=self.request.user)
+        queryset = super().get_queryset()
+        return queryset.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.validated_data['user'] = self.request.user
@@ -110,13 +165,13 @@ class ContactView(ModelViewSet):
 class ShopView(ModelViewSet):
     queryset = Shop.objects.prefetch_related('id__product_infos')
     permission_classes = [IsAuthenticated]
-    serializer_class = ShopSerializer
+    serializer_class = serialyzers.ShopSerializer
 
     def get_permissions(self):
-        if self.action in ['retrieve', 'list']:
+        if self.action in SAFE_METHODS:
             permission_classes = [IsAuthenticated]
         else:
-            permission_classes = [IsShop]
+            permission_classes = [IsAuthenticated & IsShop]
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
@@ -127,7 +182,7 @@ class ShopView(ModelViewSet):
 class OrderShopView(ModelViewSet):
     queryset = Order.objects.all()
     permission_classes = [IsShop]
-    serializer_class = OrderSerializer
+    serializer_class = serialyzers.OrderSerializer
 
     def get_queryset(self):
         shops = Shop.objects.filter(user=self.request.user)
@@ -138,7 +193,7 @@ class OrderShopView(ModelViewSet):
 class ShopLoadView(APIView):
     queryset = Shop.objects.all()
     permission_classes = [IsAuthenticated & IsShop]
-    serializer_class = ShopLoadSerializer
+    serializer_class = serialyzers.ShopLoadSerializer
 
     def post(self, request):
         if request.data.get('file'):

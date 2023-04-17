@@ -1,30 +1,39 @@
 from backend.models import (Category, Contact, Order, OrderItem, Parameter,
                             Product, ProductInfo, ProductParameter, Shop, User)
-from rest_framework.serializers import (CharField, HyperlinkedRelatedField, HyperlinkedIdentityField,
-                                        IntegerField, ModelSerializer, SlugRelatedField,
-                                        ValidationError)
+from rest_framework.serializers import (CharField, HyperlinkedRelatedField,
+                                        IntegerField, ModelSerializer,
+                                        SlugRelatedField, ValidationError)
 
 
 class UserSerialyzer(ModelSerializer):
     password = CharField(required=True, write_only=True, label='Пароль')
     password2 = CharField(required=True, write_only=True, label='Проверка пароля')
-    contacts = HyperlinkedRelatedField(many=True, read_only=True, view_name='contacts-detail')
-    orders = HyperlinkedRelatedField(many=True, read_only=True, view_name='orders-detail')
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'password2', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token', 'contacts', 'orders']
+        fields = ['id', 'email', 'password', 'password2', 'type', 'first_name', 'last_name', 'father_name', 'company', 'position', 'auth_token']
         read_only_fields = ['auth_token']
+        extra_kwargs = {'password': {'write_only': True}}
 
     def validate(self, attrs):
         if attrs.get('password') and attrs.get('password2'):
             if attrs['password'] != attrs['password2']:
-                raise ValidationError({'status': 'error', 'message': 'пароль не совпадает'})
+                raise ValidationError({
+                    'status': 'error',
+                    'message': 'пароль не совпадает',
+                    })
             attrs.pop('password2')
         return super().validate(attrs)
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.set_password(validated_data.get('password'))
+        instance.save()
+        return instance
 
 
 class ParameterSerializer(ModelSerializer):
@@ -35,6 +44,7 @@ class ParameterSerializer(ModelSerializer):
 
 class ProductParameterSerialyzer(ModelSerializer):
     parameter = SlugRelatedField('name', read_only=True)
+
     class Meta:
         model = ProductParameter
         fields = ['parameter', 'value']
@@ -42,7 +52,10 @@ class ProductParameterSerialyzer(ModelSerializer):
     def to_internal_value(self, data):
         ret = []
         for key, val in data.items():
-            ret.append({'parameter': key, 'value': val})
+            ret.append({
+                'parameter': key,
+                'value': val,
+                })
         return ret
 
 
@@ -59,6 +72,7 @@ class ProductInfoSerializer(ModelSerializer):
 class ProductSerializer(ModelSerializer):
     product_infos = HyperlinkedRelatedField(many=True, read_only=True, view_name='product-detail')
     category = HyperlinkedRelatedField(read_only=True, view_name='category-detail')
+
     class Meta:
         model = Product
         fields = ['name', 'category', 'product_infos']
@@ -66,6 +80,7 @@ class ProductSerializer(ModelSerializer):
 
 class CategorySerialyzer(ModelSerializer):
     products = HyperlinkedRelatedField(many=True, read_only=True, view_name='product-detail')
+
     class Meta:
         model = Category
         fields = ['id', 'name', 'products']
@@ -81,31 +96,37 @@ class ShopSerializer(ModelSerializer):
         fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
         read_only_fields = ['user']
 
+
 class ContactSerializer(ModelSerializer):
     id = HyperlinkedRelatedField(read_only=True, view_name='contacts-detail')
+
     class Meta:
         model = Contact
         exclude = ['user']
 
 
 class OrderItemSerializer(ModelSerializer):
-    product_info = ProductInfoSerializer()
+    # product_info = HyperlinkedRelatedField(read_only=True, view_name='product-detail')
+
     class Meta:
         model = OrderItem
         fields = ['product_info', 'quantity', 'sum']
+        # read_only_fields = ['product_info']
 
     def get_sum(self, obj):
         return obj.sum
 
 
 class OrderSerializer(ModelSerializer):
-    ordered_items = OrderItemSerializer(many=True)
+    id = HyperlinkedRelatedField(read_only=True, view_name='orders-detail')
+    ordered_items = OrderItemSerializer(many=True, read_only=True)
     user = HyperlinkedRelatedField(read_only=True, view_name='user-detail')
-    # contact = ChoiceField(Contact.objects.filter(user=user))
+    # contact = HyperlinkedRelatedField(read_only=True, view_name='contacts-detail')
 
     class Meta:
         model = Order
-        fields = ['user', 'dt', 'state', 'contact', 'total', 'ordered_items']
+        fields = ['id', 'user', 'dt', 'state', 'contact', 'total', 'ordered_items']
+        read_only_fields = ['state']
 
     def get_total(self, obj):
         return obj.total
@@ -132,7 +153,8 @@ class ShopLoadSerializer(ModelSerializer):
     def create(self, validated_data):
         categories = validated_data.pop('categories')
         for category in categories:
-            Category.objects.update_or_create(id=category['id'], defaults={'name': category['name']})
+            Category.objects.update_or_create(id=category['id'],
+                                              defaults={'name': category['name']})
         # product_infos = validated_data.pop('product_infos')
         # shop = Shop.objects.create(**validated_data)
         # shop.categories.set(categories)

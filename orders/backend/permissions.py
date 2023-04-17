@@ -6,6 +6,11 @@ class IsShopOwner(BasePermission):
         return request.user.id == obj.user
 
 
+class IsUserOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.id == obj.user
+
+
 class IsOrderUserOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.id == obj.user_id
@@ -16,7 +21,7 @@ class IsShop(BasePermission):
         return request.user.type == 'shop'
 
     def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
+        if request.method in SAFE_METHODS and obj.state:
             return True
         else:
             if obj.user == request.user:
