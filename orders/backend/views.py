@@ -1,7 +1,7 @@
 from backend import serialyzers
 from backend.models import (Category, Contact, Order, OrderItem, Product,
                             ProductInfo, Shop, User)
-from backend.permissions import IsOrderUserOwner, IsShop
+from backend.permissions import IsOrderUserOwner, IsShop, IsShopOwner
 from backend.utils import file_shop_load, link_shop_load
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.models import Token
@@ -75,7 +75,7 @@ class BuyerOrderView(ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.filter(user=self.request.user)
+        return queryset.filter(user=self.request.user).exclude(state='basket')
 
     def perform_create(self, serializer):
         basket = self.queryset.filter(user=self.request.user, state='basket')
@@ -92,11 +92,11 @@ class BasketView(ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        basket = Order.objects.get(user=self.request.user, state='basket')
+        basket, _ = Order.objects.get_or_create(user=self.request.user, state='basket')
         return queryset.filter(order=basket)
 
     def perform_create(self, serializer):
-        basket = Order.objects.get(user=self.request.user, state='basket')
+        basket, _ = Order.objects.get_or_create(user=self.request.user, state='basket')
         serializer.validated_data['order_id'] = basket.pk
         return super().perform_create(serializer)
 
@@ -110,22 +110,22 @@ class OrderConfirmView(APIView):
         OrderItem.objects.bulk_update(save_list, item.product_info.quantity)
 
     def verify_items(self, basket):
-        errors = []
-        items = []
+        errors = {}
+        items = {}
         ordered_items = OrderItem.objects.filter(order=basket)
         for item in ordered_items:
             try:
                 check_quantity = item.quantity <= item.product_info.quantity
                 if check_quantity:
                     item.product_info.quantity -= item.quantity
-                    items.append(item)
+                    items[item.product_info.pk] = item.product_info.quantity
                     # item.save()
                     continue
                 else:
-                    errors.append(item.product_info.pk)
+                    errors[item.product_info.pk] = 'incorrect quantity'
             except OrderItem.DoesNotExist:
-                errors.append('NF')
-        return errors
+                errors['0']('Item Not Found')
+        return errors, items
 
     def check_basket(self):
         try:
@@ -137,16 +137,21 @@ class OrderConfirmView(APIView):
     def put(self, request):
         basket = self.check_basket()
         if basket:
-            verify = self.verify_items(basket)
-            if verify:
+            errors, items = self.verify_items(basket)
+            if not errors:
+                for product, quantity in items.items():
+                    instance = ProductInfo.objects.get(pk=product)
+                    instance.quantity = quantity
+                    instance.save()
                 basket.state = 'new'
-                basket.save()
+                # basket.save()
                 resp = {'Message: Order created'}
             else:
-                resp = verify
+                resp = errors
         else:
             resp = {'message': 'basket is empty'}
         return Response(resp)
+
 
 class ContactView(ModelViewSet):
     queryset = Contact.objects.all()
@@ -193,7 +198,7 @@ class OrderShopView(ModelViewSet):
 class ShopLoadView(APIView):
     queryset = Shop.objects.all()
     permission_classes = [IsAuthenticated & IsShop]
-    serializer_class = serialyzers.ShopLoadSerializer
+    # serializer_class = serialyzers.ShopLoadSerializer
 
     def post(self, request):
         if request.data.get('file'):

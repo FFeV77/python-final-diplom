@@ -2,7 +2,7 @@ from backend.models import (Category, Contact, Order, OrderItem, Parameter,
                             Product, ProductInfo, ProductParameter, Shop, User)
 from rest_framework.serializers import (CharField, HyperlinkedRelatedField,
                                         IntegerField, ModelSerializer,
-                                        SlugRelatedField, ValidationError)
+                                        SlugRelatedField, ValidationError, UniqueTogetherValidator)
 
 
 class UserSerialyzer(ModelSerializer):
@@ -106,12 +106,18 @@ class ContactSerializer(ModelSerializer):
 
 
 class OrderItemSerializer(ModelSerializer):
-    # product_info = HyperlinkedRelatedField(read_only=True, view_name='product-detail')
 
     class Meta:
         model = OrderItem
-        fields = ['product_info', 'quantity', 'sum']
-        # read_only_fields = ['product_info']
+        fields = ['id', 'product_info', 'quantity', 'sum']
+        # read_only_fields = ['order_id']
+        # validators = [
+        #     UniqueTogetherValidator(
+        #         queryset=model.objects.all(),
+        #         fields=('order_id', 'product_info_id'),
+        #         message=("Some custom message.")
+        #     )
+        # ]
 
     def get_sum(self, obj):
         return obj.sum
@@ -120,8 +126,6 @@ class OrderItemSerializer(ModelSerializer):
 class OrderSerializer(ModelSerializer):
     id = HyperlinkedRelatedField(read_only=True, view_name='orders-detail')
     ordered_items = OrderItemSerializer(many=True, read_only=True)
-    user = HyperlinkedRelatedField(read_only=True, view_name='user-detail')
-    # contact = HyperlinkedRelatedField(read_only=True, view_name='contacts-detail')
 
     class Meta:
         model = Order
@@ -149,18 +153,3 @@ class ShopLoadSerializer(ModelSerializer):
     class Meta:
         model = Shop
         fields = ['shop', 'user', 'state', 'categories', 'goods']
-
-    def create(self, validated_data):
-        categories = validated_data.pop('categories')
-        for category in categories:
-            Category.objects.update_or_create(id=category['id'],
-                                              defaults={'name': category['name']})
-        # product_infos = validated_data.pop('product_infos')
-        # shop = Shop.objects.create(**validated_data)
-        # shop.categories.set(categories)
-        # shop.user_id.set()
-        # for product in product_infos:
-        #     parameters = product.pop('product_parameters')
-        #     ProductInfo.objects.create(**product)
-        #     for parameter in parameters:
-        #         ProductParameter.objects.create(**parameter)
