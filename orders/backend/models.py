@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.core.mail import send_mail
+from django.core.mail import send_mail, send_mass_mail
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -49,18 +49,6 @@ class UserManager(BaseUserManager):
     def create_auth_token(sender, instance=None, created=False, **kwargs):
         if created:
             Token.objects.create(user=instance)
-
-    @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-    def register_mail(sender, instance=None, created=False, **kwargs):
-        if created:
-            domain = settings.EMAIL_SITE_HOST
-            token = Token.objects.get(user=instance)
-            url = reverse('activation', kwargs={'id': instance.pk, 'token': token.key})
-            subject = 'Confirm registration'
-            message = f'Please, follow link below, to confirm register</br>{domain}{url}'
-            from_email = 'register@example.com'
-            to_email = [instance.email]
-            send_mail(subject, message, from_email, to_email, fail_silently=False)
 
 
 class User(AbstractUser):
@@ -319,14 +307,31 @@ class OrderItem(models.Model):
     def sum(self):
         return self.product_info.price * self.quantity
 
-    # @receiver(post_save, s)
-    # def order_created_mail(sender, instance=None, created=False, **kwargs):
-    #     if created:
-    #         domain = 'http://127.0.0.1:8000'
-    #         url = reverse('activation', kwargs={'id': instance.pk})
-    #         subject = 'New Order'
-    #         message = f'New order created {instance.order}'
-    #         from_email = 'order@example.com'
-    #         to_email = Shop.objects.filter(product_infos)
-    #         print(message)
-    #         send_mail(subject, message, from_email, to_email, fail_silently=False)
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def register_mail(sender, instance=None, created=False, **kwargs):
+    if created:
+        domain = settings.EMAIL_SITE_HOST
+        token = Token.objects.get(user=instance)
+        url = reverse('activation', kwargs={'id': instance.pk, 'token': token.key})
+        subject = 'Confirm registration'
+        message = f'Please, follow link below, to confirm register</br>{domain}{url}'
+        from_email = 'register@example.com'
+        to_email = [instance.email]
+        send_mail(subject, message, from_email, to_email, fail_silently=False)
+
+
+@receiver(post_save, sender=Order)
+def shops_email(sender, instance=None, update_fields=None, created=False, **kwargs):
+    if not created and update_fields == ({'state'}):
+        order = instance.pk
+        items = [item['product_info'] for item in OrderItem.objects.filter(order=order).values('product_info')]
+        shops = [product['shop'] for product in ProductInfo.objects.filter(pk__in=items).values('shop')]
+        users = [shop['user__email'] for shop in Shop.objects.filter(id__in=shops).values('user__email')]
+        domain = settings.EMAIL_SITE_HOST
+        url = reverse('orders_shop-detail', kwargs={'pk': order})
+        subject = 'Order created'
+        message = f'Created new order for You shop</br>{domain}{url}'
+        from_email = 'info@example.com'
+        to_email = users
+        send_mass_mail([(subject, message, from_email, to_email)], fail_silently=False)
