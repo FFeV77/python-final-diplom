@@ -80,7 +80,7 @@ class BuyerOrderView(ModelViewSet):
 
 
 class BasketView(ModelViewSet):
-    queryset = OrderItem.objects.all()
+    queryset = OrderItem.objects.prefetch_related('product_info')
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.OrderItemSerializer
 
