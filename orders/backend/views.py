@@ -1,7 +1,7 @@
 from backend import serialyzers
 from backend.models import (Category, Contact, Order, OrderItem, Product,
                             ProductInfo, Shop, User)
-from backend.permissions import IsOrderUserOwner, IsShop, IsShopOwner
+from backend.permissions import IsOrderUserOwner, IsShop
 from backend.utils import file_shop_load, link_shop_load
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.models import Token
@@ -77,13 +77,6 @@ class BuyerOrderView(ModelViewSet):
         queryset = super().get_queryset()
         return queryset.filter(user=self.request.user).exclude(state='basket')
 
-    def perform_create(self, serializer):
-        basket = self.queryset.filter(user=self.request.user, state='basket')
-        if basket:
-            raise ValidationError('Basket exists')
-        serializer.validated_data['user'] = self.request.user
-        return super().perform_create(serializer)
-
 
 class BasketView(ModelViewSet):
     queryset = OrderItem.objects.all()
@@ -119,7 +112,6 @@ class OrderConfirmView(APIView):
                 if check_quantity:
                     item.product_info.quantity -= item.quantity
                     items[item.product_info.pk] = item.product_info.quantity
-                    # item.save()
                     continue
                 else:
                     errors[item.product_info.pk] = 'incorrect quantity'
@@ -134,17 +126,30 @@ class OrderConfirmView(APIView):
         except Order.DoesNotExist:
             return False
 
+    def verify_contact(self, basket, request):
+        if request.data.get('contact'):
+            try:
+                return Contact.objects.get(pk=request.data.get('contact'))
+            except Contact.DoesNotExist:
+                raise serialyzers.ValidationError('Wrong contact')
+        if basket.contact:
+            return basket.contact
+        else:
+            raise serialyzers.ValidationError('Contact must be set for order')
+
     def put(self, request):
         basket = self.check_basket()
         if basket:
             errors, items = self.verify_items(basket)
-            if not errors:
+            contact = self.verify_contact(basket, request)
+            if not errors and contact:
                 for product, quantity in items.items():
                     instance = ProductInfo.objects.get(pk=product)
                     instance.quantity = quantity
                     instance.save()
                 basket.state = 'new'
-                # basket.save()
+                basket.contact = contact
+                basket.save(update_fields=['state', 'contact'])
                 resp = {'Message: Order created'}
             else:
                 resp = errors
@@ -162,10 +167,6 @@ class ContactView(ModelViewSet):
         queryset = super().get_queryset()
         return queryset.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.validated_data['user'] = self.request.user
-        return super().perform_create(serializer)
-
 
 class ShopView(ModelViewSet):
     queryset = Shop.objects.prefetch_related('id__product_infos')
@@ -178,10 +179,6 @@ class ShopView(ModelViewSet):
         else:
             permission_classes = [IsAuthenticated & IsShop]
         return [permission() for permission in permission_classes]
-
-    def perform_create(self, serializer):
-        serializer.validated_data['user'] = self.request.user
-        return super().perform_create(serializer)
 
 
 class OrderShopView(ModelViewSet):
@@ -198,7 +195,6 @@ class OrderShopView(ModelViewSet):
 class ShopLoadView(APIView):
     queryset = Shop.objects.all()
     permission_classes = [IsAuthenticated & IsShop]
-    # serializer_class = serialyzers.ShopLoadSerializer
 
     def post(self, request):
         if request.data.get('file'):
