@@ -90,8 +90,7 @@ class BasketView(ModelViewSet):
 
     def perform_create(self, serializer):
         basket, _ = Order.objects.get_or_create(user=self.request.user, state='basket')
-        serializer.validated_data['order_id'] = basket.pk
-        return super().perform_create(serializer)
+        return serializer.save(order=basket)
 
 
 class OrderConfirmView(APIView):
