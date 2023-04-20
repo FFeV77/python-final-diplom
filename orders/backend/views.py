@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from django.db.models import Prefetch
 
 
 # Create your views here.
@@ -24,7 +25,7 @@ class ActivateUserView(APIView):
             if created_token.key == token:
                 user.is_active = True
                 user.save()
-                resp = {'status': 'ok'}
+                resp = {'status': 'activated'}
             else:
                 resp = {'status': 'error', 'message': 'activation link is invalid'}
         else:
@@ -69,7 +70,7 @@ class ProductView(ReadOnlyModelViewSet):
 
 
 class BuyerOrderView(ModelViewSet):
-    queryset = Order.objects.all()
+    queryset = Order.objects.prefetch_related('ordered_items__product_info', 'contact')
     permission_classes = [IsAuthenticated & IsOrderUserOwner]
     serializer_class = serialyzers.OrderSerializer
 
@@ -168,7 +169,7 @@ class ContactView(ModelViewSet):
 
 
 class ShopView(ModelViewSet):
-    queryset = Shop.objects.prefetch_related('id__product_infos')
+    queryset = Shop.objects.prefetch_related('product_infos', 'categories')
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.ShopSerializer
 
@@ -187,7 +188,9 @@ class OrderShopView(ModelViewSet):
 
     def get_queryset(self):
         shops = Shop.objects.filter(user=self.request.user)
-        queryset = Order.objects.filter(ordered_items__product_info__shop__in=shops)
+        queryset = Order.objects.filter(ordered_items__product_info__shop__in=shops).prefetch_related(
+            Prefetch('ordered_items', queryset=OrderItem.objects.filter(product_info__shop__in=shops))
+            )
         return queryset
 
 
