@@ -1,13 +1,12 @@
 from backend.views import (ActivateUserView, BasketView, BuyerOrderView,
                            CategoryView, ContactView, ListProductView,
-                           OrderConfirmView, OrderShopView, ProductView, RegisterView,
-                           ShopLoadView, ShopView, UserView)
+                           OrderConfirmView, OrderShopView, ProductView,
+                           RegisterView, ShopLoadView, ShopView, UserView)
 from django.urls import path
 from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-# router.register('user', UserView, basename='user')
 router.register('orders', BuyerOrderView, basename='orders')
 router.register('products', ListProductView, basename='products')
 router.register('product', ProductView, basename='product')
