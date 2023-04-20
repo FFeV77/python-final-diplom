@@ -339,13 +339,13 @@ def shops_email(sender, instance=None, update_fields=None, created=False, **kwar
 
 @receiver(post_save, sender=Order)
 def buyer_email(sender, instance=None, update_fields=None, created=False, **kwargs):
-    if not created and {'state'} in update_fields:
+    if not created and instance.state == 'confirmed':
         order = instance.pk
-        user = User.objects.get(pk=instance.user)
+        user = User.objects.get(pk=instance.user.id)
         domain = settings.EMAIL_SITE_HOST
         url = reverse('orders-detail', kwargs={'pk': order})
         subject = 'Order changed'
         message = f'Order status changed</br>{domain}{url}'
         from_email = 'info@example.com'
-        to_email = user
+        to_email = [user.email]
         send_mail(subject, message, from_email, to_email, fail_silently=False)
