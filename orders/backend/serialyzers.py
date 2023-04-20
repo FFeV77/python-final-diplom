@@ -81,7 +81,6 @@ class ProductSerializer(ModelSerializer):
 
 
 class CategorySerialyzer(ModelSerializer):
-    products = HyperlinkedRelatedField(many=True, read_only=True, view_name='product-detail')
 
     class Meta:
         model = Category
