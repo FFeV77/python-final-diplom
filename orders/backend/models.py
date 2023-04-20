@@ -316,14 +316,14 @@ def register_mail(sender, instance=None, created=False, **kwargs):
         url = reverse('activation', kwargs={'id': instance.pk, 'token': token.key})
         subject = 'Confirm registration'
         message = f'Please, follow link below, to confirm register</br>{domain}{url}'
-        from_email = 'register@example.com'
+        from_email = 'info@example.com'
         to_email = [instance.email]
         send_mail(subject, message, from_email, to_email, fail_silently=False)
 
 
 @receiver(post_save, sender=Order)
 def shops_email(sender, instance=None, update_fields=None, created=False, **kwargs):
-    if not created and update_fields == ({'state'}):
+    if not created and update_fields == ({'state', 'contact'}):
         order = instance.pk
         items = [item['product_info'] for item in OrderItem.objects.filter(order=order).values('product_info')]
         shops = [product['shop'] for product in ProductInfo.objects.filter(pk__in=items).values('shop')]
@@ -335,3 +335,17 @@ def shops_email(sender, instance=None, update_fields=None, created=False, **kwar
         from_email = 'info@example.com'
         to_email = users
         send_mass_mail([(subject, message, from_email, to_email)], fail_silently=False)
+
+
+@receiver(post_save, sender=Order)
+def buyer_email(sender, instance=None, update_fields=None, created=False, **kwargs):
+    if not created and {'state'} in update_fields:
+        order = instance.pk
+        user = User.objects.get(pk=instance.user)
+        domain = settings.EMAIL_SITE_HOST
+        url = reverse('orders-detail', kwargs={'pk': order})
+        subject = 'Order changed'
+        message = f'Order status changed</br>{domain}{url}'
+        from_email = 'info@example.com'
+        to_email = user
+        send_mail(subject, message, from_email, to_email, fail_silently=False)
