@@ -94,7 +94,7 @@ class ShopSerializer(ModelSerializer):
     class Meta:
         model = Shop
         fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
-        read_only_fields = ['user']
+        read_only_fields = ['user', 'categories', 'product_infos']
 
     def create(self, validated_data):
         try:
@@ -129,6 +129,7 @@ class OrderItemSerializer(ModelSerializer):
 
 class OrderSerializer(ModelSerializer):
     ordered_items = OrderItemSerializer(many=True, read_only=True)
+    contact = ContactSerializer(read_only=True)
     user = HiddenField(default=CurrentUserDefault())
 
     class Meta:
