@@ -1,8 +1,10 @@
 from backend.models import (Category, Contact, Order, OrderItem, Parameter,
                             Product, ProductInfo, ProductParameter, Shop, User)
-from rest_framework.serializers import (CharField, HyperlinkedRelatedField,
+from django.db.utils import IntegrityError
+from rest_framework.serializers import (CharField, CurrentUserDefault,
+                                        HiddenField, HyperlinkedRelatedField,
                                         IntegerField, ModelSerializer,
-                                        SlugRelatedField, ValidationError, UniqueTogetherValidator)
+                                        SlugRelatedField, ValidationError)
 
 
 class UserSerialyzer(ModelSerializer):
@@ -87,22 +89,26 @@ class CategorySerialyzer(ModelSerializer):
 
 
 class ShopSerializer(ModelSerializer):
-    id = HyperlinkedRelatedField(read_only=True, view_name='shops-detail')
-    product_infos = HyperlinkedRelatedField(many=True, read_only=True, view_name='product-detail')
-    categories = HyperlinkedRelatedField(many=True, read_only=True, view_name='category-detail')
+    user = HiddenField(default=CurrentUserDefault())
 
     class Meta:
         model = Shop
         fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
         read_only_fields = ['user']
 
+    def create(self, validated_data):
+        try:
+            return super().create(validated_data)
+        except IntegrityError:
+            raise ValidationError('Only one Shop per User')
+
 
 class ContactSerializer(ModelSerializer):
-    id = HyperlinkedRelatedField(read_only=True, view_name='contacts-detail')
+    user = HiddenField(default=CurrentUserDefault())
 
     class Meta:
         model = Contact
-        exclude = ['user']
+        fields = '__all__'
 
 
 class OrderItemSerializer(ModelSerializer):
@@ -110,22 +116,20 @@ class OrderItemSerializer(ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ['id', 'product_info', 'quantity', 'sum']
-        # read_only_fields = ['order_id']
-        # validators = [
-        #     UniqueTogetherValidator(
-        #         queryset=model.objects.all(),
-        #         fields=('order_id', 'product_info_id'),
-        #         message=("Some custom message.")
-        #     )
-        # ]
 
     def get_sum(self, obj):
         return obj.sum
 
+    def create(self, validated_data):
+        try:
+            return super().create(validated_data)
+        except IntegrityError:
+            raise ValidationError('Item already in basket')
+
 
 class OrderSerializer(ModelSerializer):
-    id = HyperlinkedRelatedField(read_only=True, view_name='orders-detail')
     ordered_items = OrderItemSerializer(many=True, read_only=True)
+    user = HiddenField(default=CurrentUserDefault())
 
     class Meta:
         model = Order
@@ -134,6 +138,12 @@ class OrderSerializer(ModelSerializer):
 
     def get_total(self, obj):
         return obj.total
+
+    def create(self, validated_data):
+        try:
+            return super().create(validated_data)
+        except IntegrityError:
+            raise ValidationError('Basket exists')
 
 
 class ProductInfoLoadSerializer(ModelSerializer):
