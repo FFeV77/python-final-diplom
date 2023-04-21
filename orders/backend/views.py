@@ -189,7 +189,9 @@ class OrderShopView(ModelViewSet):
     def get_queryset(self):
         shops = Shop.objects.filter(user=self.request.user)
         queryset = Order.objects.filter(ordered_items__product_info__shop__in=shops).prefetch_related(
-            Prefetch('ordered_items', queryset=OrderItem.objects.filter(product_info__shop__in=shops))
+            Prefetch('ordered_items',
+                     queryset=OrderItem.objects.filter(product_info__shop__in=shops).prefetch_related('product_info')
+                     )
             )
         return queryset
 
