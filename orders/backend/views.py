@@ -3,20 +3,20 @@ from backend.models import (Category, Contact, Order, OrderItem, Product,
                             ProductInfo, Shop, User)
 from backend.permissions import IsOrderUserOwner, IsShop
 from backend.utils import file_shop_load, link_shop_load
+from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from django.db.models import Prefetch
 
 
 # Create your views here.
 class ActivateUserView(APIView):
     queryset = User.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [~IsAuthenticated]
 
     def patch(self, request, id, token):
         user = User.objects.get(pk=id)
@@ -35,7 +35,7 @@ class ActivateUserView(APIView):
 
 class RegisterView(CreateAPIView):
     queryset = User.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [~IsAuthenticated]
     serializer_class = serialyzers.UserSerialyzer
 
 
@@ -69,7 +69,7 @@ class ProductView(ReadOnlyModelViewSet):
     serializer_class = serialyzers.ProductInfoSerializer
 
 
-class BuyerOrderView(ModelViewSet):
+class BuyerOrderView(ReadOnlyModelViewSet):
     queryset = Order.objects.prefetch_related('ordered_items__product_info', 'contact')
     permission_classes = [IsAuthenticated & IsOrderUserOwner]
     serializer_class = serialyzers.OrderSerializer
