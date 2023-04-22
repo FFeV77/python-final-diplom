@@ -71,7 +71,6 @@ class User(AbstractUser):
             "Unselect this instead of deleting accounts."
         ),
     )
-
     father_name = models.CharField(
         'отчество',
         max_length=150,
@@ -268,7 +267,7 @@ class Order(models.Model):
 
     class Meta:
         verbose_name = 'Заказ'
-        verbose_name_plural = "Список заказ"
+        verbose_name_plural = "Список заказов"
         ordering = ('-dt',)
 
     def __str__(self):
