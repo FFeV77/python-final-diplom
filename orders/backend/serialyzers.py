@@ -2,9 +2,9 @@ from backend.models import (Category, Contact, Order, OrderItem, Parameter,
                             Product, ProductInfo, ProductParameter, Shop, User)
 from django.db.utils import IntegrityError
 from rest_framework.serializers import (CharField, CurrentUserDefault,
-                                        HiddenField, HyperlinkedRelatedField,
-                                        IntegerField, ModelSerializer,
-                                        SlugRelatedField, ValidationError)
+                                        HiddenField, IntegerField,
+                                        ModelSerializer, SlugRelatedField,
+                                        ValidationError)
 
 
 class UserSerialyzer(ModelSerializer):
@@ -63,21 +63,17 @@ class ProductParameterSerialyzer(ModelSerializer):
 
 class ProductInfoSerializer(ModelSerializer):
     product_parameters = ProductParameterSerialyzer(many=True)
-    product = HyperlinkedRelatedField(read_only=True, view_name='products-detail')
-    shop = HyperlinkedRelatedField(read_only=True, view_name='shops-detail')
 
     class Meta:
         model = ProductInfo
-        fields = ['external_id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters']
+        fields = ['id', 'external_id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters']
 
 
 class ProductSerializer(ModelSerializer):
-    product_infos = HyperlinkedRelatedField(many=True, read_only=True, view_name='product-detail')
-    category = HyperlinkedRelatedField(read_only=True, view_name='category-detail')
 
     class Meta:
         model = Product
-        fields = ['name', 'category', 'product_infos']
+        fields = ['id', 'name', 'category', 'product_infos']
 
 
 class CategorySerialyzer(ModelSerializer):
