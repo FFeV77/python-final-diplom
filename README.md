@@ -20,7 +20,8 @@
 
 ### Установка 
 
-- Установить зависимости через `pip`:
+1. Установить зависимости:
+- через `pip`:
 
 ```bash
 pip install -r requirements.txt
@@ -31,11 +32,11 @@ pip install -r requirements.txt
 poetry install
 ```
 
-- настроть БД или использовать [Docker-file](./Docker-compose.yml) проекта
+2. Настроть БД или использовать [Docker-file](./Docker-compose.yml) проекта
 
-- Установить переменные окружения и переименовать [.dev_temp](./orders/orders/.env_dev) в .env
+3. Установить переменные окружения и переименовать [.dev_temp](./orders/orders/.env_dev) в .env
 
-- Выполнить команду:
+4. Выполнить команду:
 
 ```bash
 python manage.py makemigrations
