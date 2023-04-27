@@ -39,9 +39,9 @@ poetry install
 4. Выполнить команду:
 
 ```bash
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
+python orders/manage.py makemigrations
+python orders/manage.py migrate
+python orders/manage.py runserver
 ```
 
 
