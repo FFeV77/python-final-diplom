@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
+    'drf_spectacular',
 
     'debug_toolbar',
     'backend',
@@ -137,6 +138,7 @@ STATIC_URL = env('STATIC_URL')
 AUTH_USER_MODEL = 'backend.User'
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -161,3 +163,10 @@ EMAIL_SITE_HOST = env('EMAIL_SITE_HOST')
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Shop order service',
+    'DESCRIPTION': 'Shop order service https://github.com/FFeV77/python-final-diplom/blob/master/README.md',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
