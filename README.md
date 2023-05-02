@@ -20,28 +20,25 @@
 
 ### Установка 
 
-1. Установить зависимости:
-- через `pip`:
-
-```bash
-pip install -r requirements.txt
+1. Установить переменные окружения и переименовать [.env_temp](./orders/orders/.env_temp) в .env
+ - Собрать статику.
+ ```bash
+python manage.py collectstatic
 ```
 
-- или `Poetry`:
+2. Проект реализован с использованием контейнеризации.
 ```bash
-poetry install
+docker compose -f "Docker-compose.yml" up -d --build
 ```
 
-2. Настроть БД или использовать [Docker-file](./Docker-compose.yml) проекта
-
-3. Установить переменные окружения и переименовать [.env_temp](./orders/orders/.env_temp) в .env
-
-4. Выполнить команду:
-
+3. После запуска всех контейнеров выполнить миграцию БД.
 ```bash
-python orders/manage.py makemigrations
-python orders/manage.py migrate
-python orders/manage.py runserver
+docker exec pythonapp python manage.py migrate
+```
+
+4. Создать суперпользователя:
+```bash
+docker exec pythonapp python manage.py createsuperuser
 ```
 
 
