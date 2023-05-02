@@ -1,12 +1,17 @@
 version: '3.9'
 
+networks:
+ backend:
+
 services:
  db:
   container_name: diplom_db
   image: postgres:alpine
   restart: unless-stopped
-  ports:
-   - 8080:5432
+  expose:
+   - 5432
+  networks:
+   - backend
   volumes:
    - ./logs:/var/log
   environment:
@@ -19,3 +24,26 @@ services:
    timeout: 30s
    retries: 5
    start_period: 30s
+ pythonapp:
+  container_name: pythonapp
+  build: .
+  command: gunicorn --bind 0.0.0.0:8000 orders.wsgi:application
+  expose:
+   - 8000
+  depends_on:
+   - db
+  networks:
+   - backend
+  env_file:
+   - ./orders/orders/.env
+ nginx:
+  image: nginx:latest
+  restart: unless-stopped
+  networks:
+   - backend
+  volumes:
+   - ./logs/nginx:/var/log/nginx
+   - ./conf.d/:/etc/nginx/conf.d/
+   - ./orders/static/:/staticfiles/static/
+  ports: 
+   - 80:80
