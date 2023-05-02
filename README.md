@@ -18,6 +18,32 @@
 - Может включать и отключать прием заказов.
 - Может получать список оформленных заказов (с товарами из его прайса).
 
+### Установка 
+
+1. Установить зависимости:
+- через `pip`:
+
+```bash
+pip install -r requirements.txt
+```
+
+- или `Poetry`:
+```bash
+poetry install
+```
+
+2. Настроть БД или использовать [Docker-file](./Docker-compose.yml) проекта
+
+3. Установить переменные окружения и переименовать [.env_temp](./orders/orders/.env_temp) в .env
+
+4. Выполнить команду:
+
+```bash
+python orders/manage.py makemigrations
+python orders/manage.py migrate
+python orders/manage.py runserver
+```
+
 
 ### endpoint
 
