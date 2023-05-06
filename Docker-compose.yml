@@ -36,6 +36,9 @@ services:
       restart: true
   networks:
    - backend
+  volumes:
+   - ./orders:/code
+   - ./logs/celery:/var/log/celery
   env_file:
    - ./orders/orders/.env
  nginx:
@@ -49,3 +52,10 @@ services:
    - ./orders/static/:/staticfiles/static/
   ports: 
    - 80:80
+ redis:
+  image: redis:alpine
+  restart: unless-stopped
+  networks:
+   - backend
+  expose:
+   - 6379
