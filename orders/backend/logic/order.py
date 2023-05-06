@@ -1,9 +1,11 @@
-from backend.serialyzers import ValidationError
+from backend.serialyzers import OrderSerializer, ValidationError
 from backend.exception import ItemNotFound
 from backend.models import Contact, Order, OrderItem, ProductInfo, Shop, User
 from backend.tasks import send_mail_task, send_mass_mail_task
 from django.conf import settings
 from django.urls import reverse
+from django.template import Context
+from django.template.loader import get_template
 
 
 def inform_shops_on_new_order(order):
@@ -27,7 +29,12 @@ def inform_user_on_new_order(order):
     subject = 'Order changed'
     message = f'Order status changed</br>{domain}{url}'
     to_email = [user.email]
-    send_mail_task.delay(subject, message, to_email)
+    template = get_template("template_new_order.html")
+    context = {
+        'order': OrderSerializer(order).data
+        }
+    html_message = template.render(context)
+    send_mail_task.delay(subject, message, html_message, to_email)
 
 
 def change_quantity(items):
