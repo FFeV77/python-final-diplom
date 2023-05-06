@@ -49,7 +49,7 @@ services:
   volumes:
    - ./logs/nginx:/var/log/nginx
    - ./conf.d/:/etc/nginx/conf.d/
-   - ./orders/static/:/staticfiles/static/
+   - ./static/:/staticfiles/static/
   ports: 
    - 80:80
  redis:
