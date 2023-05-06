@@ -1,11 +1,12 @@
 from backend import serialyzers
+from backend.logic.order import verify_order
+from backend.logic.user import check_activation_link
+from backend.logic.utils import file_shop_load, link_shop_load
 from backend.models import (Category, Contact, Order, OrderItem, Product,
                             ProductInfo, Shop, User)
 from backend.permissions import IsOrderUserOwner, IsShop
-from backend.utils import file_shop_load, link_shop_load
 from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.authtoken.models import Token
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
@@ -14,32 +15,25 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 
 # Create your views here.
-class ActivateUserView(APIView):
+class UserActivateView(APIView):
+    """Активация пользователя"""
     queryset = User.objects.all()
     permission_classes = [~IsAuthenticated]
 
     def patch(self, request, id, token):
-        user = User.objects.get(pk=id)
-        if user:
-            created_token = Token.objects.get(user_id=user)
-            if created_token.key == token:
-                user.is_active = True
-                user.save()
-                resp = {'status': 'activated'}
-            else:
-                resp = {'status': 'error', 'message': 'activation link is invalid'}
-        else:
-            resp = {'status': 'error', 'message': 'invalid user'}
+        resp = check_activation_link(id, token)
         return Response(resp)
 
 
-class RegisterView(CreateAPIView):
+class UserRegisterView(CreateAPIView):
+    """Регистрация пользователя"""
     queryset = User.objects.all()
     permission_classes = [~IsAuthenticated]
     serializer_class = serialyzers.UserSerialyzer
 
 
 class UserView(RetrieveUpdateAPIView):
+    """Данные авторизованного пользователя"""
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.UserSerialyzer
@@ -49,12 +43,14 @@ class UserView(RetrieveUpdateAPIView):
 
 
 class CategoryView(ReadOnlyModelViewSet):
+    """Информация о категориях"""
     queryset = Category.objects.prefetch_related('products')
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.CategorySerialyzer
 
 
 class ListProductView(ReadOnlyModelViewSet):
+    """информация по товарным наименованиям"""
     queryset = Product.objects.prefetch_related('product_infos')
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.ProductSerializer
@@ -64,12 +60,14 @@ class ListProductView(ReadOnlyModelViewSet):
 
 
 class ProductView(ReadOnlyModelViewSet):
+    """Информация по товарам магазинов"""
     queryset = ProductInfo.objects.prefetch_related('product_parameters__parameter')
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.ProductInfoSerializer
 
 
 class BuyerOrderView(ReadOnlyModelViewSet):
+    """Список и информация о заказах авторизованного пользователя"""
     queryset = Order.objects.prefetch_related('ordered_items__product_info', 'contact')
     permission_classes = [IsAuthenticated & IsOrderUserOwner]
     serializer_class = serialyzers.OrderSerializer
@@ -80,6 +78,7 @@ class BuyerOrderView(ReadOnlyModelViewSet):
 
 
 class BasketView(ModelViewSet):
+    """Информация по списку позиций в заказе пользователя со статусом basket"""
     queryset = OrderItem.objects.prefetch_related('product_info')
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.OrderItemSerializer
@@ -95,70 +94,17 @@ class BasketView(ModelViewSet):
 
 
 class OrderConfirmView(APIView):
+    """Подтверждение заказа пользователем"""
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated & IsOrderUserOwner]
 
-    def change_quantity(self, items):
-        save_list = [item.save() for item in items]
-        OrderItem.objects.bulk_update(save_list, item.product_info.quantity)
-
-    def verify_items(self, basket):
-        errors = {}
-        items = {}
-        ordered_items = OrderItem.objects.filter(order=basket)
-        for item in ordered_items:
-            try:
-                check_quantity = item.quantity <= item.product_info.quantity
-                if check_quantity:
-                    item.product_info.quantity -= item.quantity
-                    items[item.product_info.pk] = item.product_info.quantity
-                    continue
-                else:
-                    errors[item.product_info.pk] = 'incorrect quantity'
-            except OrderItem.DoesNotExist:
-                errors['0']('Item Not Found')
-        return errors, items
-
-    def check_basket(self):
-        try:
-            basket = Order.objects.get(user=self.request.user, state='basket')
-            return basket
-        except Order.DoesNotExist:
-            return False
-
-    def verify_contact(self, basket, request):
-        if request.data.get('contact'):
-            try:
-                return Contact.objects.get(pk=request.data.get('contact'))
-            except Contact.DoesNotExist:
-                raise serialyzers.ValidationError('Wrong contact')
-        if basket.contact:
-            return basket.contact
-        else:
-            raise serialyzers.ValidationError('Contact must be set for order')
-
     def put(self, request):
-        basket = self.check_basket()
-        if basket:
-            errors, items = self.verify_items(basket)
-            contact = self.verify_contact(basket, request)
-            if not errors and contact:
-                for product, quantity in items.items():
-                    instance = ProductInfo.objects.get(pk=product)
-                    instance.quantity = quantity
-                    instance.save()
-                basket.state = 'new'
-                basket.contact = contact
-                basket.save(update_fields=['state', 'contact'])
-                resp = {'Message: Order created'}
-            else:
-                resp = errors
-        else:
-            resp = {'message': 'basket is empty'}
+        resp = verify_order(self.request.user, request.data.get('contact'))
         return Response(resp)
 
 
 class ContactView(ModelViewSet):
+    """Информация по Контактам авторизованного пользователя"""
     queryset = Contact.objects.all()
     permission_classes = [IsAuthenticated & IsOrderUserOwner]
     serializer_class = serialyzers.ContactSerializer
@@ -169,6 +115,7 @@ class ContactView(ModelViewSet):
 
 
 class ShopView(ModelViewSet):
+    """Информация по магазинам"""
     queryset = Shop.objects.prefetch_related('product_infos', 'categories')
     permission_classes = [IsAuthenticated]
     serializer_class = serialyzers.ShopSerializer
@@ -182,6 +129,7 @@ class ShopView(ModelViewSet):
 
 
 class OrderShopView(ModelViewSet):
+    """Отображение для магазина списка заказанных позиций с сортировкой по заказам пользователя"""
     queryset = Order.objects.all()
     permission_classes = [IsShop]
     serializer_class = serialyzers.OrderSerializer
@@ -197,6 +145,7 @@ class OrderShopView(ModelViewSet):
 
 
 class ShopLoadView(APIView):
+    """Обновление списка и параметров товаров магазина, через файл или ссылку"""
     queryset = Shop.objects.all()
     permission_classes = [IsAuthenticated & IsShop]
 
