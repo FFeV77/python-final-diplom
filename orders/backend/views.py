@@ -151,9 +151,9 @@ class ShopLoadView(APIView):
 
     def post(self, request):
         if request.data.get('file'):
-            resp = file_shop_load(request.data['file'], request)
+            file_shop_load(request.data['file'], request)
         elif request.data.get('link'):
-            resp = link_shop_load(request.data['link'], request)
+            link_shop_load(request.data['link'], request)
         else:
-            resp = {'error': 'data not set'}
-        return Response(resp)
+            raise serialyzers.ValidationError('Uploaded data must be set')
+        return Response('Data uploaded')
