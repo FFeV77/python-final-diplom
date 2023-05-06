@@ -99,6 +99,7 @@ class Shop(models.Model):
                           blank=True
                           )
     filename = models.FileField(verbose_name='Файл',
+                                upload_to='uploads/',
                                 null=True,
                                 blank=True
                                 )
