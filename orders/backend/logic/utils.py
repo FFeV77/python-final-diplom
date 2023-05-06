@@ -59,6 +59,6 @@ def link_shop_load(link, request):
 
 
 def file_shop_load(file, request):
-    with open(file, 'r') as f:
+    with file.open() as f:
         data = yaml.safe_load(f)
     return yaml_shop_load(data, request)

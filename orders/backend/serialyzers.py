@@ -20,10 +20,7 @@ class UserSerialyzer(ModelSerializer):
     def validate(self, attrs):
         if attrs.get('password') and attrs.get('password2'):
             if attrs['password'] != attrs['password2']:
-                raise ValidationError({
-                    'status': 'error',
-                    'message': 'пароль не совпадает',
-                    })
+                raise ValidationError('Пароли не совпадают')
             attrs.pop('password2')
         return super().validate(attrs)
 
@@ -88,7 +85,7 @@ class ShopSerializer(ModelSerializer):
 
     class Meta:
         model = Shop
-        fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos']
+        fields = ['id', 'name', 'user', 'state', 'categories', 'product_infos', 'filename', 'url']
         read_only_fields = ['user', 'categories', 'product_infos']
 
     def create(self, validated_data):
@@ -158,4 +155,4 @@ class ShopLoadSerializer(ModelSerializer):
 
     class Meta:
         model = Shop
-        fields = ['shop', 'user', 'state', 'categories', 'goods']
+        fields = ['shop', 'user', 'state', 'categories', 'goods', 'filename', 'url']

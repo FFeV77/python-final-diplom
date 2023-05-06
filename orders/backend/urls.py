@@ -1,7 +1,7 @@
 from backend.views import (UserActivateView, BasketView, BuyerOrderView,
                            CategoryView, ContactView, ListProductView,
                            OrderConfirmView, OrderShopView, ProductView,
-                           UserRegisterView, ShopLoadView, ShopView, UserView)
+                           UserRegisterView, ShopView, UserView)
 from django.urls import path
 from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
@@ -22,5 +22,4 @@ urlpatterns = [
     path('activation/<int:id>/<str:token>', UserActivateView.as_view(), name='activation'),
     path('order_new', OrderConfirmView.as_view(), name='order_new'),
     path('get-token/', views.obtain_auth_token),
-    path('load', ShopLoadView.as_view()),
 ] + router.urls

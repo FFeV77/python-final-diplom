@@ -12,6 +12,7 @@ from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from rest_framework.decorators import action
 
 
 # Create your views here.
@@ -127,6 +128,12 @@ class ShopView(ModelViewSet):
             permission_classes = [IsAuthenticated & IsShop]
         return [permission() for permission in permission_classes]
 
+    @action(detail=True, methods=['post'])
+    def upload(self, request, pk=None):
+        shop = Shop.objects.get(pk=pk)
+        file_shop_load(shop.filename, request)
+        return Response('Data uploaded')
+
 
 class OrderShopView(ModelViewSet):
     """Отображение для магазина списка заказанных позиций с сортировкой по заказам пользователя"""
@@ -142,18 +149,3 @@ class OrderShopView(ModelViewSet):
                      )
             )
         return queryset
-
-
-class ShopLoadView(APIView):
-    """Обновление списка и параметров товаров магазина, через файл или ссылку"""
-    queryset = Shop.objects.all()
-    permission_classes = [IsAuthenticated & IsShop]
-
-    def post(self, request):
-        if request.data.get('file'):
-            file_shop_load(request.data['file'], request)
-        elif request.data.get('link'):
-            link_shop_load(request.data['link'], request)
-        else:
-            raise serialyzers.ValidationError('Uploaded data must be set')
-        return Response('Data uploaded')
