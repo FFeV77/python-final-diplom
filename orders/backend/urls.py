@@ -18,7 +18,7 @@ router.register('basket', BasketView, basename='basket')
 
 urlpatterns = [
     path('user/', UserView.as_view(), name='user'),
-    path('register/', UserRegisterView.as_view(), name='user'),
+    path('register/', UserRegisterView.as_view(), name='register'),
     path('activation/<int:id>/<str:token>', UserActivateView.as_view(), name='activation'),
     path('order_new', OrderConfirmView.as_view(), name='order_new'),
     path('get-token/', views.obtain_auth_token),

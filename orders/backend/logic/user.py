@@ -13,7 +13,7 @@ def user_activate_mail(user):
     subject = 'Confirm registration'
     message = f'Please, follow link below, to confirm register</br>{domain}{url}'
     to_email = [user.email]
-    send_mail_task.delay(subject, message, to_email)
+    send_mail_task.delay(subject=subject, message=message, to_email=to_email)
 
 
 def user_activate(user):

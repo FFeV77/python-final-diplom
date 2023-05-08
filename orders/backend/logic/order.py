@@ -34,7 +34,7 @@ def inform_user_on_new_order(order):
         'order': OrderSerializer(order).data
         }
     html_message = template.render(context)
-    send_mail_task.delay(subject, message, html_message, to_email)
+    send_mail_task.delay(subject=subject, message=message, to_email=to_email, html_message=html_message)
 
 
 def change_quantity(items):

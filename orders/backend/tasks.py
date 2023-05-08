@@ -4,7 +4,7 @@ from celery import shared_task
 
 
 @shared_task()
-def send_mail_task(subject, message, html_message, to_email):
+def send_mail_task(subject, message, to_email, html_message=None):
     from_email = settings.EMAIL_FROM
     send_mail(subject, message, from_email, to_email, fail_silently=False, html_message=html_message)
 
