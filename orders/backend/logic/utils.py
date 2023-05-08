@@ -11,12 +11,12 @@ replacements = {
     }
 
 
-def yaml_shop_load(data, request):
+def yaml_shop_load(data, user):
     product_infos = data.pop('goods')
     categories = data.pop('categories')
 
     shop, _ = Shop.objects.get_or_create(name=data.pop('shop'),
-                                         user=request.user,
+                                         user=user,
                                          )
 
     for category in categories:
@@ -61,4 +61,4 @@ def link_shop_load(link, request):
 def file_shop_load(file, request):
     with file.open() as f:
         data = yaml.safe_load(f)
-    return yaml_shop_load(data, request)
+    return yaml_shop_load(data, request.user)
