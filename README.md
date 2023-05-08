@@ -37,11 +37,6 @@ docker exec pythonapp python manage.py migrate
 docker exec pythonapp python manage.py createsuperuser
 ```
 
-5. Запустить Celery
-```bash
-docker exec pythonapp python -m celery -A orders worker -E
-```
-
 ### endpoint
 
 - register: регистрация пользователя

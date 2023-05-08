@@ -27,7 +27,7 @@ services:
  pythonapp:
   container_name: pythonapp
   build: .
-  command: gunicorn --bind 0.0.0.0:8000 orders.wsgi:application
+  command: gunicorn --bind 0.0.0.0:8000 orders.wsgi:application && python -m celery -A orders worker -E
   expose:
    - 8000
   depends_on:
@@ -36,6 +36,8 @@ services:
       restart: true
   networks:
    - backend
+  links:
+   - diplom_db:diplom_db
   volumes:
    - ./orders:/code
    - ./logs/celery:/var/log/celery
