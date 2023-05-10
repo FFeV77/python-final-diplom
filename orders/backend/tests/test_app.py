@@ -1,12 +1,11 @@
 import pytest
-from rest_framework.test import APIClient
-from model_bakery import baker
 import yaml
-from backend.models import Category, Shop, User
-from rest_framework.authtoken.models import Token
-from django.urls import reverse
-
 from backend.logic.utils import yaml_shop_load
+from backend.models import Category, Parameter, Product, ProductInfo, ProductParameter, Shop, User
+from django.urls import reverse
+from model_bakery import baker
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
 
 data = '''shop: Связной
 categories:
@@ -158,17 +157,25 @@ def test_shop_create(client, django_user_model):
     assert resp['name'] == data['name']
 
 
-@pytest.mark.celery(result_backend='redis://python-final-diplom-redis-1:6379')
 @pytest.mark.django_db
-def test_load(client, django_user_model):
-    user_shop = django_user_model.objects.create_user(password='test', email='test@email.ru', type='shop', is_active=True)
-    shop_data = yaml.load(data, Loader=yaml.Loader)
+class TestOrders:
+    def test_load(self, client, django_user_model):
+        user_shop = django_user_model.objects.create_user(password='test', email='test@email.ru', type='shop', is_active=True)
+        shop_data = yaml.load(data, Loader=yaml.Loader)
 
-    client.force_authenticate(user_shop)
-    yaml_shop_load(shop_data, user_shop)
+        client.force_authenticate(user_shop)
+        yaml_shop_load(shop_data, user_shop)
 
-    categories = Category.objects.count()
-    assert categories == 3
+        categories = Category.objects.count()
+        assert categories == 3
+        products = Product.objects.count()
+        assert products == 4
+        product_info = ProductInfo.objects.count()
+        assert product_info == 4
+        parameter = Parameter.objects.count()
+        assert parameter == 4
+        product_parameter = ProductParameter.objects.count()
+        assert product_parameter == 16
 
 
 # @pytest.mark.celery(result_backend='redis://python-final-diplom-redis-1:6379')
