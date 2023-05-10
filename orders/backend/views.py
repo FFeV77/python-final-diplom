@@ -131,7 +131,7 @@ class ShopView(ModelViewSet):
     @action(detail=True, methods=['post'])
     def upload(self, request, pk=None):
         shop = Shop.objects.get(pk=pk)
-        file_shop_load(shop.filename, request)
+        file_shop_load(shop.filename, request.user)
         return Response('Data uploaded')
 
 

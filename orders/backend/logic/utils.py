@@ -1,7 +1,8 @@
 import requests
 import yaml
 from backend.models import (Category, Parameter, Product, ProductInfo,
-                            ProductParameter, Shop)
+                            ProductParameter, Shop, User)
+from celery import shared_task
 
 replacements = {
     'shop': 'name',
@@ -11,10 +12,11 @@ replacements = {
     }
 
 
-def yaml_shop_load(data, user):
+@shared_task
+def yaml_shop_load(data, user_id):
     product_infos = data.pop('goods')
     categories = data.pop('categories')
-
+    user = User.objects.get(pk=user_id)
     shop, _ = Shop.objects.get_or_create(name=data.pop('shop'),
                                          user=user,
                                          )
@@ -53,12 +55,12 @@ def yaml_shop_load(data, user):
     return True
 
 
-def link_shop_load(link, request):
+def link_shop_load(link, user):
     data = requests.get(link).content
-    return yaml_shop_load(data, request)
+    return yaml_shop_load(data, user.id)
 
 
-def file_shop_load(file, request):
+def file_shop_load(file, user):
     with file.open() as f:
         data = yaml.safe_load(f)
-    return yaml_shop_load(data, request.user)
+    return yaml_shop_load.delay(data, user.id)
